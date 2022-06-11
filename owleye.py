@@ -19,6 +19,18 @@ banner = """
                                     ░ ░                     
 	<----------Information Gathering tool---------->
 """
+def helpMenu():
+	if len(sys.argv) < 2 or '-h' in sys.argv[:] or '--help' in sys.argv[:]:
+		help = """OwlEyes is a information Gathering tool, can you use this options!
+FIRST OPTIONS 	URL
+--shodan, -s 	SHODAN_KEY
+--censys, -c 	API_ID,SECRET_KEY
+--gh, -g 	Google Hacking
+--ssl 		Enable SSL
+--help, -h 	Show this menu
+		"""
+		print(help)
+		sys.exit(0)
 def rIP(ip):
 	req = requests.get("https://api.hackertarget.com/reverseiplookup/?q="+ip, stream=True)
 	for lines in req.iter_lines():
@@ -132,36 +144,71 @@ def GoogleDork(url):
 def shodanSearch(url, token):
 	import shodan
 	try:
+		from bs4 import BeautifulSoup
+		from mitrecve import crawler
 		api = shodan.Shodan(token)
 		url = url.replace("http://","").replace("https://","")
 		ip = socket.gethostbyname(url)
-		host = api.host(ip)
+		#ip = "34.95.206.221"
+		query = "hostname:leonardoonline.com.br"
+		r = requests.get("https://www.shodan.io/search?query="+query+"&key="+token)
+		ips=[]
+		domains=[]
+		soup = BeautifulSoup(r.text,features="lxml")
+		x = soup.body.findAll('li', attrs={'class':'hostnames text-secondary'})
+		for i in x:
+			y=i.replace('<li class="hostnames text-secondary">','').replace('</li>','')
+			try:
+				if re.findall( r'[0-9]+(?:\.[0-9]+){3}', y):
+					ips.append(y)
+			except:
+				domains.append(y)
+		ips.append(ip)
+		domains.append(url)
 		print("\n------------------------------------------------")
 		print("                    S H O D A N")
 		print("------------------------------------------------\n")
-		query = "hostname: "+url
-		result = api.search(query)
-		pprint(result)
-		print('[IP]',host['ip_str'])
-		print('[ORG]',host['org'])
-		print('[OS]',end='')
-		if host['os'] == None:
-			print(" Not identified!")
-		for item in host['data']:
-			print("[PORT]",item['port'])
-			print('[BANNER]',item['data'])
+		for i in ips:
+			for j in domains:
+				print('[IP]',i,j)
+			host = api.host(i)
+			print('[ORG]',host['org'])
+			print('[OS]',end=' ')
+			if host['os'] == None:
+				print("Not identified!")
+			else:
+				print(host['os'])
+			print("------------------------------------------------")
+			for item in host['data']:
+				print("[PORT]",item['port'])
+				print('[BANNER]\n'+item['data'])
+				print('[ASN]',item['asn'])
+				print('[LOCATION]',item['location']['country_name'],end=" ")
+				print(item['location']['country_code'], end=" ")
+				print(item['location']['city'], end=" ")
+				print(item['location']['region_code'])
+				for e in item['opts']:
+					print('[VULNS]',e)
+				try:
+					for i in host['vulns']:
+						CVE = i.replace('!','')
+						print("[CVE]",CVE,end=" ")
+						print(crawler.get_cve_detail(CVE)[0][2])
+				except KeyError:
+					pass
+				print("------------------------------------------------\n")
 	except shodan.exception.APIError as e:
 		print(e)
-	except:
-		print(f"Use: {sys.argv[0]} --shodan token")
+	# except:
+	# 	print(f"Use: {sys.argv[0]} --shodan token")
 
 def censysSearch(url, token):
 	from censys.search import CensysHosts
+	from censys.search import CensysCertificates
 	try:
 		api_id, secret = token.split(",")
 	except:
 		print(f"Use: {sys.argv[0]} --censys api_id,secret_key")
-	url = url.replace("http://","").replace("https://","")
 	ip = socket.gethostbyname(url)
 	print("\n------------------------------------------------")
 	print("                    C E N S Y S")
@@ -171,7 +218,6 @@ def censysSearch(url, token):
 	for page in h.search(url):
 		info += page
 	for i in page:
-		print("\n------------------------------------------------")
 		print("[IP]",i['ip'])
 		b=i["services"]
 		for j in b:
@@ -180,35 +226,38 @@ def censysSearch(url, token):
 		print("[COUNTRY]",i['location']['country'],i['location']['country_code'])
 		print("[TIMEZONE]",i['location']['timezone'])
 		print("[REGISTERED COUNTRY]",i['location']['registered_country'],i['location']['registered_country_code'])
+		print("\n------------------------------------------------")
+	h = CensysCertificates(api_id, secret)
+	certificate_query = 'parsed.names: '+url
+	subdomains=[]
+	certificates_search_results = h.search(certificate_query, fields=['parsed.names'])
+	for search_result in certificates_search_results:
+		subdomains.extend(search_result['parsed.names'])
+	sub=[]
+	for i in subdomains:
+		if i in sub:
+			pass
+		else:
+			sub.append(i)
+	subdomains.clear()
+	for i in sub:
+		try:
+			ip = socket.gethostbyname(str(i))
+		except:
+			ip="Not resolved"
+		print("[SUBDOMAIN]",i,"-",ip)
 try:
 	print(banner)
-	if len(sys.argv) < 2:
-		help = """OwlEyes is a information Gathering tool, can you use this options!
-FIRST OPTIONS 	URL
---shodan, -s 	SHODAN_KEY
---censys, -c 	API_ID,SECRET_KEY
---gh, -g 	Google Hacking
---help, -h 	Show this menu
-		"""
-		print(help)
-		sys.exit(0)
-	if '-h' in sys.argv[:] or '--help' in sys.argv[:]:
-		help = """OwlEyes is a information Gathering tool, can you use this options!
-FIRST OPTIONS 	URL
---shodan, -s 	SHODAN_KEY
---censys, -c 	API_ID,SECRET_KEY
---gh, -g 	Google Hacking
---help, -h 	Show this menu
-		"""
-		print(help)
-		sys.exit(0)
+	helpMenu()
 	url = sys.argv[1]
-	r = requests.get(url, allow_redirects=True, stream=True)
-	r2 = requests.head(url, allow_redirects=True, stream=True)
+	ssl = "http://"
+	if '--ssl' in sys.argv[:]:
+		ssl="https://"
+	r = requests.get(ssl+url, allow_redirects=True, stream=True)
+	r2 = requests.head(ssl+url, allow_redirects=True, stream=True)
 	d = re.search('<\W*title\W*(.*)</title', r.text, re.IGNORECASE)
-	ip = socket.gethostbyname(str(url.replace("http://","").replace("https://","")))
+	ip = socket.gethostbyname(str(url))
 	title = d.group(1)
-
 	print("------------------------------------------------")
 	print("             I N F O R M A T I O N S")
 	print("------------------------------------------------\n")
@@ -216,19 +265,25 @@ FIRST OPTIONS 	URL
 	print(f"[INFO] IP Address: {ip}")
 	print(f"[INFO] Web Server: {r2.headers['server']}")
 	ASN(ip)
-	r = requests.get(url+"/robots.txt")
+	r = requests.get(ssl+url+"/robots.txt")
 	print(f"[INFO] Robots?: ",end="")
 	if r.status_code == 200:
 		print("Founded!")
 	else:
 		print("Not founded!")
-	print("[INFO] CMS: ",end="")
-	CMS(url)
-	print("[INFO] CloudFlare: ",end="")
-	if 'cloudflare' in r2.headers['server'].lower():
-		print("Yes")
+	r = requests.get(ssl+url+"/sitemap.xml")
+	print(f"[INFO] Sitemap?: ",end="")
+	if r.status_code == 200:
+		print("Founded!")
 	else:
-		print("No")
+		print("Not founded!")
+	# print("[INFO] CMS: ",end="")
+	# CMS(url)
+	# print("[INFO] CloudFlare: ",end="")
+	# if 'cloudflare' in r2.headers['server'].lower():
+	# 	print("Yes")
+	# else:
+	# 	print("No")
 	print("\n------------------------------------------------")
 	print("                N E T W O R K")
 	print("------------------------------------------------\n")
@@ -236,18 +291,6 @@ FIRST OPTIONS 	URL
 	rDNS(ip)
 	SubNetCalc(ip)
 	DNSLookup(url)
-	try:
-		if sys.argv[2:].index("--gh") or sys.argv[1:].index("-g"):
-			GoogleDork(url)
-	except:
-		pass
-
-	if '--censys' in sys.argv[:]:
-		token = sys.argv[sys.argv[:].index("--censys")+1]
-		censysSearch(url,token)
-	if '-c' in sys.argv[:]:
-		token = sys.argv[sys.argv[:].index("-c")+1]
-		censysSearch(url,token)
 
 	if '--shodan' in sys.argv[:]:
 		token = sys.argv[sys.argv[:].index("--shodan")+1]
@@ -255,6 +298,17 @@ FIRST OPTIONS 	URL
 	if '-s' in sys.argv[:]:
 		token = sys.argv[sys.argv[:].index("-s")+1]
 		shodanSearch(url, token)
+	if '--censys' in sys.argv[:]:
+		token = sys.argv[sys.argv[:].index("--censys")+1]
+		censysSearch(url,token)
+	if '-c' in sys.argv[:]:
+		token = sys.argv[sys.argv[:].index("-c")+1]
+		censysSearch(url,token)
+	try:
+		if sys.argv[2:].index("--gh") or sys.argv[1:].index("-g"):
+			GoogleDork(url)
+	except:
+		pass
 
 except IndexError:
 	print(f"Use: {sys.argv[0]} http://yoururl.com")
