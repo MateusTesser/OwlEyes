@@ -28,28 +28,29 @@ FIRST OPTIONS 	URL
 --gh, -g 	Google Hacking
 --ssl 		Enable SSL
 --help, -h 	Show this menu
+--wayback, -w   WAYBACK MACHINE
 		"""
 		print(help)
 		sys.exit(0)
-def rIP(ip):
+def rIP(ip : str):
 	req = requests.get("https://api.hackertarget.com/reverseiplookup/?q="+ip, stream=True)
 	for lines in req.iter_lines():
 		print("[rIP]", lines.decode("utf-8"))
-def rDNS(ip):
+def rDNS(ip : str):
 	req = requests.get("https://api.hackertarget.com/reversedns/?q="+ip, stream=True)
 	for lines in req.iter_lines():
 		print("[rDNS]", lines.decode("utf-8"))
-def SubNetCalc(ip):
+def SubNetCalc(ip : str):
 	req = requests.get("http://api.hackertarget.com/subnetcalc/?q="+ip, stream=True)
 	for lines in req.iter_lines():
 		print("[SubNet Calc]", lines.decode("utf-8"))
-def DNSLookup(url):
+def DNSLookup(url : str):
 	url = url.replace("https://","").replace("http://","")
 	req = requests.get("http://api.hackertarget.com/dnslookup/?q="+url, stream=True)
 	for lines in req.iter_lines():
 		print("[DNS Lookup]", lines.decode("utf-8"))
 
-def CMS(url):
+def CMS(url : str):
 	req = requests.get(url)
 	if re.search("/wp-content/",str(req.content)):
 		print("WordPress!")
@@ -73,11 +74,11 @@ def CMS(url):
 	if r.status_code == 200:
 		print("phpMyAdmin")
 
-def ASN(ip):
+def ASN(ip : str):
 	a, _ , b , _, _, c, d, _,f,_= get_as_data(ip)
 	print(f"[INFO] ASN: {a} {b} {c} {d}")
 
-def GoogleDork(url):
+def GoogleDork(url : str):
 	from googlesearch import search
 	from googlesearch import get_random_user_agent
 	from time import sleep
@@ -87,61 +88,89 @@ def GoogleDork(url):
 	print("             G O O G L E  D O R K S")
 	print("------------------------------------------------\n")
 	ua = get_random_user_agent()
+	url=[]
 	print("[*] Filtering by URL...\n")
 	for urls in search(query, stop=10):
 		print("[DORK]",urls)
+		url.append(urls)
 	sleep(randint(6,15))
 	query = 'site:pastebin.com "'+url+'"'
 	print("\n[*] Searching leaks...")
 	for urls in search(query, stop=10):
 		print("[LEAKS]",urls)
+		url.append(urls)
 	query = 'site:trello.com "'+url+'"'
 	for urls in search(query, stop=10):
 		print("[LEAKS]",urls)
+		url.append(urls)
 	print("\n[*] Searching interesting files...\n")
 	query = 'site:'+url+' filetype:sql'
 	for urls in search(query, stop=5):
 		print("[FILE]",urls)
+		url.append(urls)
 	query = 'site:'+url+' filetype:pdf'
 	for urls in search(query, stop=5):
 		print("[FILE]",urls)
+		url.append(urls)
 	query = 'site:'+url+' filetype:txt'
 	for urls in search(query, stop=5):
 		print("[FILE]",urls)
+		url.append(urls)
 	query = 'site:'+url+' filetype:ovpn'
 	for urls in search(query, stop=5):
 		print("[FILE]",urls)
+		url.append(urls)
 	query = 'site:'+url+' filetype:docx'
 	for urls in search(query, stop=5):
 		print("[FILE]",urls)
+		url.append(urls)
 	query = 'site:'+url+' filetype:doc'
 	for urls in search(query, stop=5):
 		print("[FILE]",urls)
+		url.append(urls)
 	query = 'site:'+url+' filetype:xls'
 	for urls in search(query, stop=5):
 		print("[FILE]",urls)
+		url.append(urls)
 	query = 'site:'+url+' filetype:xlsx'
 	for urls in search(query, stop=5):
 		print("[FILE]",urls)
+		url.append(urls)
 	query = 'site:'+url+' filetype:asp'
 	for urls in search(query, stop=5):
 		print("[FILE]",urls)
+		url.append(urls)
 	query = 'site:'+url+' filetype:aspx'
 	for urls in search(query, stop=5):
 		print("[FILE]",urls)
+		url.append(urls)
 	query = 'site:'+url+' filetype:js'
 	for urls in search(query, stop=5):
 		print("[FILE]",urls)
+		url.append(urls)
 	sleep(randint(6,15))
+	query = 'site:'+url+' filetype:js'
+	for urls in search(query, stop=5):
+		print("[FILE]",urls)
+		url.append(urls)
+
 	print("\n[*] Searching Login pages...\n")
 	query = 'site:'+url+' intitle:Login'
 	for urls in search(query, stop=5):
 		print("[PAGE]",urls)
+		url.append(urls)
 	query = 'site:'+url+' intext:Login'
 	for urls in search(query, stop=5):
 		print("[PAGE]",urls)
+		url.append(urls)
+	sleep(randint(6,15))
+	print("\n[*] Searching cache pages...\n")
+	for i in url:
+		query = 'cache:'+i
+		for urls in search(query, stop=5):
+			print("[CACHE]",urls)
 
-def shodanSearch(url, token):
+def shodanSearch(url : str, token : str):
 	import shodan
 	try:
 		from bs4 import BeautifulSoup
@@ -154,17 +183,21 @@ def shodanSearch(url, token):
 		r = requests.get("https://www.shodan.io/search?query="+query+"&key="+token)
 		ips=[]
 		domains=[]
+		ips.append(ip)
+		domains.append(url)
 		soup = BeautifulSoup(r.text,features="lxml")
 		x = soup.body.findAll('li', attrs={'class':'hostnames text-secondary'})
+		domains_final=["com",".br","org",".ru","net",".co",".us","edu","mil","rpa"]
 		for i in x:
+			i = str(i)
 			y=i.replace('<li class="hostnames text-secondary">','').replace('</li>','')
 			try:
 				if re.findall( r'[0-9]+(?:\.[0-9]+){3}', y):
+					if y[-3:] in domains_final:
+						raise IndexError
 					ips.append(y)
 			except:
 				domains.append(y)
-		ips.append(ip)
-		domains.append(url)
 		print("\n------------------------------------------------")
 		print("                    S H O D A N")
 		print("------------------------------------------------\n")
@@ -193,16 +226,21 @@ def shodanSearch(url, token):
 					for i in host['vulns']:
 						CVE = i.replace('!','')
 						print("[CVE]",CVE,end=" ")
-						print(crawler.get_cve_detail(CVE)[0][2])
+						try:
+							print(crawler.get_cve_detail(CVE)[0][2])
+						except IndexError:
+							print("Not indexed!")
+						pass
 				except KeyError:
 					pass
 				print("------------------------------------------------\n")
 	except shodan.exception.APIError as e:
 		print(e)
+		pass
 	# except:
 	# 	print(f"Use: {sys.argv[0]} --shodan token")
 
-def censysSearch(url, token):
+def censysSearch(url : str, token : str):
 	from censys.search import CensysHosts
 	from censys.search import CensysCertificates
 	try:
@@ -246,6 +284,20 @@ def censysSearch(url, token):
 		except:
 			ip="Not resolved"
 		print("[SUBDOMAIN]",i,"-",ip)
+
+def wayback(url : str):
+	print("\n------------------------------------------------")
+	print("                    W A Y B A C K")
+	print("------------------------------------------------\n")
+	r = requests.get('http://web.archive.org/cdx/search/cdx?url=' + url + '/*&output=json&collapse=urlkey')
+	pprint(r.text)
+	data = r.json()
+	for i in range(len(data)):
+		if i == 0:
+			pass
+		else:
+			print("[WAYBACK]",data[i][2],end=" - ")
+			print(data[i][4])
 try:
 	print(banner)
 	helpMenu()
@@ -287,10 +339,10 @@ try:
 	print("\n------------------------------------------------")
 	print("                N E T W O R K")
 	print("------------------------------------------------\n")
-	rIP(ip)
-	rDNS(ip)
-	SubNetCalc(ip)
-	DNSLookup(url)
+	# rIP(ip)
+	# rDNS(ip)
+	# SubNetCalc(ip)
+	# DNSLookup(url)
 
 	if '--shodan' in sys.argv[:]:
 		token = sys.argv[sys.argv[:].index("--shodan")+1]
@@ -304,6 +356,8 @@ try:
 	if '-c' in sys.argv[:]:
 		token = sys.argv[sys.argv[:].index("-c")+1]
 		censysSearch(url,token)
+	if '-w' in sys.argv[:] or '--wayback' in sys.argv[:]:
+		wayback(url)
 	try:
 		if sys.argv[2:].index("--gh") or sys.argv[1:].index("-g"):
 			GoogleDork(url)

@@ -10,15 +10,19 @@ You can now use Shodan, Censys.io and Google Hacking
 
 Shodan massive scan from URL, getting IPs and CVEs
 ```
-$ python3 owleye.py --shodan SHODAN KEY
+$ python3 owleye.py URL --shodan SHODAN KEY
 ```
 Censys search ports, services and subdomains
 ```
-$ python3 owleye.py --shodan API_ID,SECRET_KEY
+$ python3 owleye.py URL --shodan API_ID,SECRET_KEY
 ```
 Google Hacking
 ```
-$ python3 owleye.py --gh
+$ python3 owleye.py URL --gh
+```
+Wayback Machine
+```
+$ python3 owleye.py URL --wayback
 ```
 All parameters:
 ```
@@ -26,6 +30,7 @@ All parameters:
 --censys, -c 	API_ID,SECRET_KEY
 --gh, -g        Google Hacking
 -ssl		Enable SSL
+--wayback, -w   WAYBACK MACHINE
 ```
 ![HelpMenu](https://raw.githubusercontent.com/MateusTesser/OwlEyes/main/image/Screenshot%20from%202022-06-09%2016-27-07.png)
 ## Dependecies:
