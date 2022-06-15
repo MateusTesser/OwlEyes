@@ -237,8 +237,8 @@ def shodanSearch(url : str, token : str):
 	except shodan.exception.APIError as e:
 		print(e)
 		pass
-	# except:
-	# 	print(f"Use: {sys.argv[0]} --shodan token")
+	except:
+		print(f"Use: {sys.argv[0]} --shodan token")
 
 def censysSearch(url : str, token : str):
 	from censys.search import CensysHosts
@@ -290,7 +290,6 @@ def wayback(url : str):
 	print("                    W A Y B A C K")
 	print("------------------------------------------------\n")
 	r = requests.get('http://web.archive.org/cdx/search/cdx?url=' + url + '/*&output=json&collapse=urlkey')
-	pprint(r.text)
 	data = r.json()
 	for i in range(len(data)):
 		if i == 0:
@@ -329,20 +328,20 @@ try:
 		print("Founded!")
 	else:
 		print("Not founded!")
-	# print("[INFO] CMS: ",end="")
-	# CMS(url)
-	# print("[INFO] CloudFlare: ",end="")
-	# if 'cloudflare' in r2.headers['server'].lower():
-	# 	print("Yes")
-	# else:
-	# 	print("No")
+	print("[INFO] CMS: ",end="")
+	CMS(url)
+	print("[INFO] CloudFlare: ",end="")
+	 if 'cloudflare' in r2.headers['server'].lower():
+	 	print("Yes")
+	else:
+	 	print("No")
 	print("\n------------------------------------------------")
 	print("                N E T W O R K")
 	print("------------------------------------------------\n")
-	# rIP(ip)
-	# rDNS(ip)
-	# SubNetCalc(ip)
-	# DNSLookup(url)
+	rIP(ip)
+	rDNS(ip)
+	SubNetCalc(ip)
+	DNSLookup(url)
 
 	if '--shodan' in sys.argv[:]:
 		token = sys.argv[sys.argv[:].index("--shodan")+1]
