@@ -179,7 +179,7 @@ def shodanSearch(url : str, token : str):
 		url = url.replace("http://","").replace("https://","")
 		ip = socket.gethostbyname(url)
 		#ip = "34.95.206.221"
-		query = "hostname:leonardoonline.com.br"
+		query = "hostname:"+url
 		r = requests.get("https://www.shodan.io/search?query="+query+"&key="+token)
 		ips=[]
 		domains=[]
