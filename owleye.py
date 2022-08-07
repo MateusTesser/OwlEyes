@@ -331,7 +331,7 @@ try:
 	print("[INFO] CMS: ",end="")
 	CMS(url)
 	print("[INFO] CloudFlare: ",end="")
-	 if 'cloudflare' in r2.headers['server'].lower():
+	if 'cloudflare' in r2.headers['server'].lower():
 	 	print("Yes")
 	else:
 	 	print("No")
