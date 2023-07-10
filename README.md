@@ -14,7 +14,7 @@ $ python3 owleye.py URL --shodan SHODAN KEY
 ```
 Censys search ports, services and subdomains
 ```
-$ python3 owleye.py URL --shodan API_ID,SECRET_KEY
+$ python3 owleye.py URL --censys API_ID,SECRET_KEY
 ```
 Google Hacking
 ```
